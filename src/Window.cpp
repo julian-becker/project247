@@ -77,7 +77,7 @@ int Window::create(HINSTANCE hInstance, int nCmdShow) {
 	HGLRC fakeRC = wglCreateContext(fakeDC);	// Rendering Contex
 
 	if (fakeRC == 0) {
-		showMessage("wglCreateContex() failed.");
+		showMessage("wglCreateContext() failed.");
 		return 1;
 	}
 
