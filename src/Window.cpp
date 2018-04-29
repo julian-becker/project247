@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////
 //
-// Copyright(c) 2017 Mariusz Bartosik, mariuszbartosik.com
+// Copyright(c) 2017-2018 Mariusz Bartosik, mariuszbartosik.com
 // Subject to the MIT license, see LICENSE file.
 //
 ///////////////////////////////////////////////////////////
@@ -63,7 +63,7 @@ int Window::create(HINSTANCE hInstance, int nCmdShow) {
 	fakePFD.cAlphaBits = 8;
 	fakePFD.cDepthBits = 24;
 
-	int fakePFDID = ChoosePixelFormat(fakeDC, &fakePFD);
+	const int fakePFDID = ChoosePixelFormat(fakeDC, &fakePFD);
 	if (fakePFDID == 0) {
 		showMessage("ChoosePixelFormat() failed.");
 		return 1;
@@ -137,7 +137,7 @@ int Window::create(HINSTANCE hInstance, int nCmdShow) {
 	};
 
 	int pixelFormatID; UINT numFormats;
-	bool status = wglChoosePixelFormatARB(DC, pixelAttribs, NULL, 1, &pixelFormatID, &numFormats);
+	const bool status = wglChoosePixelFormatARB(DC, pixelAttribs, NULL, 1, &pixelFormatID, &numFormats);
 
 	if (status == false || numFormats == 0) {
 		showMessage("wglChoosePixelFormatARB() failed.");
@@ -149,7 +149,7 @@ int Window::create(HINSTANCE hInstance, int nCmdShow) {
 	SetPixelFormat(DC, pixelFormatID, &PFD);
 
 	const int major_min = 4, minor_min = 0;
-	int  contextAttribs[] = {
+	const int contextAttribs[] = {
 		WGL_CONTEXT_MAJOR_VERSION_ARB, major_min,
 		WGL_CONTEXT_MINOR_VERSION_ARB, minor_min,
 		WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
