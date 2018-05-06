@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////
 //
-// Copyright(c) 2017 Mariusz Bartosik, mariuszbartosik.com
+// Copyright(c) 2017-2018 Mariusz Bartosik, mariuszbartosik.com
 // Subject to the MIT license, see LICENSE file.
 //
 ///////////////////////////////////////////////////////////
@@ -23,6 +23,7 @@ public:
 		int	height;
 		int posX;
 		int posY;
+		bool windowed;
 	} config;
 
 	Window();
@@ -30,6 +31,8 @@ public:
 	void showMessage(LPCSTR message);
 	int create(HINSTANCE hInstance, int nCmdShow);
 	ATOM registerClass(HINSTANCE hInstance);
+	void adjustSize();
+	void center();
 	void render();
 	void swapBuffers();
 	void destroy();

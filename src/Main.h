@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////
 //
-// Copyright(c) 2017 Mariusz Bartosik, mariuszbartosik.com
+// Copyright(c) 2017-2018 Mariusz Bartosik, mariuszbartosik.com
 // Subject to the MIT license, see LICENSE file.
 //
 ///////////////////////////////////////////////////////////

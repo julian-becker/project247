@@ -13,10 +13,12 @@
 ///////////////////////////////////////////////////////////
 
 Window::Window() {
+
 	config.width = 1024;
 	config.height = 720;
 	config.posX = CW_USEDEFAULT;
 	config.posY = 0;
+	config.windowed = true;
 	style = WS_CAPTION | WS_SYSMENU | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
 }
 
@@ -28,6 +30,7 @@ Window::~Window() {
 ///////////////////////////////////////////////////////////
 
 void Window::showMessage(LPCSTR message) {
+
 	MessageBox(0, message, "Window::create", MB_ICONERROR);
 }
 
@@ -102,14 +105,12 @@ int Window::create(HINSTANCE hInstance, int nCmdShow) {
 		return 1;
 	}
 
-	// center the window (optional)
+	if (config.windowed == true) {
+		adjustSize();
+		center();
+	}
 
-	RECT primaryDisplaySize;
-	SystemParametersInfo(SPI_GETWORKAREA, 0, &primaryDisplaySize, 0);	// system taskbar and application desktop toolbars not included
-	config.posX = (primaryDisplaySize.right - config.width) / 2;
-	config.posY = (primaryDisplaySize.bottom - config.height) / 2;
-
-	// create new window and context
+	// create a new window and context
 								
 	WND = CreateWindow(
 		windowClass, "OpenGL Window",	// class name, window name
@@ -176,7 +177,7 @@ int Window::create(HINSTANCE hInstance, int nCmdShow) {
 
 	// init opengl loader here (extra safe version)
 
-	SetWindowText(WND, (LPCSTR)glGetString(GL_VERSION));
+	SetWindowText(WND, reinterpret_cast<LPCSTR>(glGetString(GL_VERSION)));
 	ShowWindow(WND, nCmdShow);
 
 	return 0;
@@ -199,8 +200,31 @@ ATOM Window::registerClass(HINSTANCE hInstance) {
 }
 
 ///////////////////////////////////////////////////////////
+// Adjust window's size for non-client area elements
+// like border and title bar
+
+void Window::adjustSize() {
+
+	RECT rect = { 0, 0, config.width, config.height };
+	AdjustWindowRect(&rect, style, false);
+	config.width = rect.right - rect.left;
+	config.height = rect.bottom - rect.top;
+}
+
+///////////////////////////////////////////////////////////
+
+void Window::center() {
+
+	RECT primaryDisplaySize;
+	SystemParametersInfo(SPI_GETWORKAREA, 0, &primaryDisplaySize, 0);	// system taskbar and application desktop toolbars not included
+	config.posX = (primaryDisplaySize.right - config.width) / 2;
+	config.posY = (primaryDisplaySize.bottom - config.height) / 2;
+}
+
+///////////////////////////////////////////////////////////
 
 void Window::render() {
+
 	glClearColor(0.129f, 0.586f, 0.949f, 1.0f);	// rgb(33,150,243)
 	glClear(GL_COLOR_BUFFER_BIT);
 }
@@ -208,12 +232,14 @@ void Window::render() {
 ///////////////////////////////////////////////////////////
 
 void Window::swapBuffers() {
+
 	SwapBuffers(DC);
 }
 
 ///////////////////////////////////////////////////////////
 
 void Window::destroy() {
+
 	wglMakeCurrent(NULL, NULL);
 	if (RC) {
 		wglDeleteContext(RC);
