@@ -12,28 +12,9 @@
 #include "gl/glext.h"
 #include "gl/wglext.h"
 
-///////////////////////////////////////////////////////////
+static void showMessage(LPCTSTR message) noexcept {
 
-Window::Window() {
-
-	config.width = 1024;
-	config.height = 720;
-	config.posX = CW_USEDEFAULT;
-	config.posY = 0;
-	config.windowed = true;
-	style = WS_CAPTION | WS_SYSMENU | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
-}
-
-///////////////////////////////////////////////////////////
-
-Window::~Window() {
-}
-
-///////////////////////////////////////////////////////////
-
-void Window::showMessage(LPCTSTR message) {
-
-	MessageBox(0, message, _T("Window::create"), MB_ICONERROR);
+	MessageBox(nullptr, message, _T("Window::create"), MB_ICONERROR);
 }
 
 ///////////////////////////////////////////////////////////
@@ -41,7 +22,7 @@ void Window::showMessage(LPCTSTR message) {
 int Window::create(HINSTANCE hInstance, int nCmdShow) {
 
 	windowClass = MAKEINTATOM(registerClass(hInstance));
-	if (windowClass == 0) {
+	if (!windowClass) {
 		showMessage(_T("registerClass() failed."));
 		return 1;
 	}
@@ -81,7 +62,7 @@ int Window::create(HINSTANCE hInstance, int nCmdShow) {
 
 	HGLRC fakeRC = wglCreateContext(fakeDC);	// Rendering Contex
 
-	if (fakeRC == 0) {
+	if (!fakeRC) {
 		showMessage(_T("wglCreateContext() failed."));
 		return 1;
 	}
@@ -90,6 +71,10 @@ int Window::create(HINSTANCE hInstance, int nCmdShow) {
 		showMessage(_T("wglMakeCurrent() failed."));
 		return 1;
 	}
+
+
+#pragma warning(push)
+#pragma warning(disable:26490)
 
 	// get pointers to functions (or init opengl loader here)
 
@@ -106,6 +91,7 @@ int Window::create(HINSTANCE hInstance, int nCmdShow) {
 		showMessage(_T("wglGetProcAddress() failed."));
 		return 1;
 	}
+#pragma warning(pop)
 
 	if (config.windowed == true) {
 		adjustSize();
@@ -140,7 +126,7 @@ int Window::create(HINSTANCE hInstance, int nCmdShow) {
 	};
 
 	int pixelFormatID; UINT numFormats;
-	const bool status = wglChoosePixelFormatARB(DC, pixelAttribs, nullptr, 1, &pixelFormatID, &numFormats);
+	const bool status = wglChoosePixelFormatARB(DC, &pixelAttribs[0], nullptr, 1, &pixelFormatID, &numFormats);
 
 	if (status == false || numFormats == 0) {
 		showMessage(_T("wglChoosePixelFormatARB() failed."));
@@ -160,8 +146,8 @@ int Window::create(HINSTANCE hInstance, int nCmdShow) {
 		0
 	};
 
-	RC = wglCreateContextAttribsARB(DC, 0, contextAttribs);
-	if (RC == nullptr) {
+	RC = wglCreateContextAttribsARB(DC, nullptr, &contextAttribs[0]);
+	if (!RC) {
 		showMessage(_T("wglCreateContextAttribsARB() failed."));
 		return 1;
 	}
@@ -178,12 +164,18 @@ int Window::create(HINSTANCE hInstance, int nCmdShow) {
 	}
 
 	// init opengl loader here (extra safe version)
-	auto glVersion = (char*)glGetString(GL_VERSION);
+#pragma warning(push)
+#pragma warning(disable:26481)
+#pragma warning(disable:26490)
+
+	auto glVersion = reinterpret_cast<char const*>(glGetString(GL_VERSION));
 #ifdef UNICODE
 	std::wstring str(glVersion, glVersion + strlen(glVersion));
 #else
 	std::string str(glVersion, glVersion + strlen(glVersion));
 #endif
+#pragma warning(pop)
+
 	SetWindowText(WND, str.c_str());
 	ShowWindow(WND, nCmdShow);
 
@@ -192,7 +184,7 @@ int Window::create(HINSTANCE hInstance, int nCmdShow) {
 
 ///////////////////////////////////////////////////////////
 
-ATOM Window::registerClass(HINSTANCE hInstance) {
+ATOM Window::registerClass(HINSTANCE hInstance) noexcept {
 
 	WNDCLASSEX wcex;
 	ZeroMemory(&wcex, sizeof(wcex));
@@ -210,7 +202,7 @@ ATOM Window::registerClass(HINSTANCE hInstance) {
 // Adjust window's size for non-client area elements
 // like border and title bar
 
-void Window::adjustSize() {
+void Window::adjustSize() noexcept {
 
 	RECT rect = { 0, 0, config.width, config.height };
 	AdjustWindowRect(&rect, style, false);
@@ -220,7 +212,7 @@ void Window::adjustSize() {
 
 ///////////////////////////////////////////////////////////
 
-void Window::center() {
+void Window::center() noexcept {
 
 	RECT primaryDisplaySize;
 	SystemParametersInfo(SPI_GETWORKAREA, 0, &primaryDisplaySize, 0);	// system taskbar and application desktop toolbars not included
@@ -230,7 +222,7 @@ void Window::center() {
 
 ///////////////////////////////////////////////////////////
 
-void Window::render() {
+void Window::render() noexcept {
 
 	glClearColor(0.129f, 0.586f, 0.949f, 1.0f);	// rgb(33,150,243)
 	glClear(GL_COLOR_BUFFER_BIT);
@@ -238,14 +230,14 @@ void Window::render() {
 
 ///////////////////////////////////////////////////////////
 
-void Window::swapBuffers() {
+void Window::swapBuffers() noexcept {
 
 	SwapBuffers(DC);
 }
 
 ///////////////////////////////////////////////////////////
 
-void Window::destroy() {
+void Window::destroy() noexcept {
 
 	wglMakeCurrent(nullptr, nullptr);
 	if (RC) {
@@ -261,7 +253,7 @@ void Window::destroy() {
 
 ///////////////////////////////////////////////////////////
 
-LRESULT CALLBACK Window::WindowProcedure(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
+LRESULT CALLBACK Window::WindowProcedure(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) noexcept {
 
 	switch (message) {
 		case WM_KEYDOWN:

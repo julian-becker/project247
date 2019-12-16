@@ -2,6 +2,7 @@
 
 [Bb]in/
 [Oo]bj/
+x64/
 *.suo
 *.sdf
 *.user

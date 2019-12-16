@@ -26,17 +26,30 @@ public:
 		bool windowed;
 	} config;
 
-	Window();
-	~Window();
-	void showMessage(LPCTSTR message);
+	constexpr Window() noexcept
+		: windowClass{}
+		, RC{}
+		, DC{}
+		, WND{}
+		, style{}
+	{
+
+		config.width = 1024;
+		config.height = 720;
+		config.posX = CW_USEDEFAULT;
+		config.posY = 0;
+		config.windowed = true;
+		style = WS_CAPTION | WS_SYSMENU | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
+	}
+
 	int create(HINSTANCE hInstance, int nCmdShow);
-	ATOM registerClass(HINSTANCE hInstance);
-	void adjustSize();
-	void center();
-	void render();
-	void swapBuffers();
-	void destroy();
-	static LRESULT CALLBACK WindowProcedure(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+	ATOM registerClass(HINSTANCE hInstance) noexcept;
+	void adjustSize() noexcept;
+	void center() noexcept;
+	void render() noexcept;
+	void swapBuffers() noexcept;
+	void destroy() noexcept;
+	static LRESULT CALLBACK WindowProcedure(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) noexcept;
 private:
 
 };

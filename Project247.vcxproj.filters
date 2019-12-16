@@ -17,8 +17,5 @@
     <ClInclude Include="src\Window.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="src\Main.h">
-      <Filter>src</Filter>
-    </ClInclude>
   </ItemGroup>
 </Project>
