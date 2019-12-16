@@ -10,10 +10,17 @@
 
 #include "Window.h"
 
-static Window window;
 
 int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow) {
+	const auto windowConfig = WindowConfigBuilder{}
+		.setHeight(1000)
+		.setWidth(1280)
+		.setPosX(0)
+		.setPosY(500)
+		.setStyle(WS_CAPTION | WS_SYSMENU | WS_CLIPSIBLINGS | WS_CLIPCHILDREN)
+		.build();
 
+	Window window(windowConfig);
 	if (window.create(hInstance, nCmdShow) != 0) {
 		PostQuitMessage(1);
 	}

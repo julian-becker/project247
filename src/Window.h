@@ -9,37 +9,60 @@
 #define _PROJECT247_WINDOW_H_
 
 #include <windows.h>
+#include <utility>
+
+struct WindowConfig {
+	int width;
+	int	height;
+	int posX;
+	int posY;
+	DWORD style;
+};
+
+class WindowConfigBuilder {
+	WindowConfig m_config{};
+public:
+	constexpr auto setWidth(int width) noexcept -> WindowConfigBuilder& {
+		m_config.width = width;
+		return *this;
+	}
+	constexpr auto setHeight(int height) noexcept -> WindowConfigBuilder& {
+		m_config.height = height;
+		return *this;
+	}
+	constexpr auto setPosX(int posX) noexcept  -> WindowConfigBuilder& {
+		m_config.posX = posX;
+		return *this;
+	}
+	constexpr auto setPosY(int posY) noexcept -> WindowConfigBuilder& {
+		m_config.posY = posY;
+		return *this;
+	}
+	constexpr auto setStyle(DWORD style) noexcept -> WindowConfigBuilder& {
+		m_config.style = style;
+		return *this;
+	}
+	constexpr auto build() const -> WindowConfig {
+		return m_config;
+	}
+};
 
 class Window {
 public:
-	LPTSTR windowClass;	// Window Class
-	HGLRC RC;			// Rendering Context
-	HDC	DC;				// Device Context
-	HWND WND;			// Window
-	DWORD style;
+	LPTSTR m_windowClass;	// Window Class
+	HGLRC m_RC;			// Rendering Context
+	HDC	m_DC;				// Device Context
+	HWND m_WND;			// Window
+	WindowConfig m_config;
 
-	struct Config {
-		int width;
-		int	height;
-		int posX;
-		int posY;
-		bool windowed;
-	} config;
 
-	constexpr Window() noexcept
-		: windowClass{}
-		, RC{}
-		, DC{}
-		, WND{}
-		, style{}
+	constexpr Window(WindowConfig config) noexcept
+		: m_windowClass{}
+		, m_RC{}
+		, m_DC{}
+		, m_WND{}
+		, m_config{std::move(config)}
 	{
-
-		config.width = 1024;
-		config.height = 720;
-		config.posX = CW_USEDEFAULT;
-		config.posY = 0;
-		config.windowed = true;
-		style = WS_CAPTION | WS_SYSMENU | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
 	}
 
 	int create(HINSTANCE hInstance, int nCmdShow);

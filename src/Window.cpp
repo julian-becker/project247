@@ -5,12 +5,15 @@
 //
 ///////////////////////////////////////////////////////////
 
+#define _USE_MATH_DEFINES
 #include "Window.h"
-#include <tchar.h>
-#include <string>
+#include <cmath>
 #include <gl/gl.h>
 #include "gl/glext.h"
 #include "gl/wglext.h"
+#include <tchar.h>
+#include <string>
+#include <chrono>
 
 static void showMessage(LPCTSTR message) noexcept {
 
@@ -21,8 +24,8 @@ static void showMessage(LPCTSTR message) noexcept {
 
 int Window::create(HINSTANCE hInstance, int nCmdShow) {
 
-	windowClass = MAKEINTATOM(registerClass(hInstance));
-	if (!windowClass) {
+	m_windowClass = MAKEINTATOM(registerClass(hInstance));
+	if (!m_windowClass) {
 		showMessage(_T("registerClass() failed."));
 		return 1;
 	}
@@ -30,8 +33,8 @@ int Window::create(HINSTANCE hInstance, int nCmdShow) {
 	// create temporary window
 
 	HWND fakeWND = CreateWindow(
-		windowClass, _T("Fake Window"),
-		style,
+		m_windowClass, _T("Fake Window"),
+		m_config.style,
 		0, 0,						// position x, y
 		1, 1,						// width, height
 		nullptr, nullptr,					// parent window, menu
@@ -93,22 +96,20 @@ int Window::create(HINSTANCE hInstance, int nCmdShow) {
 	}
 #pragma warning(pop)
 
-	if (config.windowed == true) {
-		adjustSize();
-		center();
-	}
+	adjustSize();
+	center();
 
 	// create a new window and context
 								
-	WND = CreateWindow(
-		windowClass, _T("OpenGL Window"),	// class name, window name
-		style,							// styles
-		config.posX, config.posY,		// posx, posy. If x is set to CW_USEDEFAULT y is ignored
-		config.width, config.height,	// width, height
-		nullptr, nullptr,						// parent window, menu
+	m_WND = CreateWindow(
+		m_windowClass, _T("OpenGL Window"),	// class name, window name
+		m_config.style,						// styles
+		m_config.posX, m_config.posY,		// posx, posy. If x is set to CW_USEDEFAULT y is ignored
+		m_config.width, m_config.height,	// width, height
+		nullptr, nullptr,					// parent window, menu
 		hInstance, nullptr);				// instance, param
 
-	DC = GetDC(WND);
+	m_DC = GetDC(m_WND);
 
 	const int pixelAttribs[] = {
 		WGL_DRAW_TO_WINDOW_ARB, GL_TRUE,
@@ -126,7 +127,7 @@ int Window::create(HINSTANCE hInstance, int nCmdShow) {
 	};
 
 	int pixelFormatID; UINT numFormats;
-	const bool status = wglChoosePixelFormatARB(DC, &pixelAttribs[0], nullptr, 1, &pixelFormatID, &numFormats);
+	const bool status = wglChoosePixelFormatARB(m_DC, &pixelAttribs[0], nullptr, 1, &pixelFormatID, &numFormats);
 
 	if (status == false || numFormats == 0) {
 		showMessage(_T("wglChoosePixelFormatARB() failed."));
@@ -134,8 +135,8 @@ int Window::create(HINSTANCE hInstance, int nCmdShow) {
 	}
 
 	PIXELFORMATDESCRIPTOR PFD;
-	DescribePixelFormat(DC, pixelFormatID, sizeof(PFD), &PFD);
-	SetPixelFormat(DC, pixelFormatID, &PFD);
+	DescribePixelFormat(m_DC, pixelFormatID, sizeof(PFD), &PFD);
+	SetPixelFormat(m_DC, pixelFormatID, &PFD);
 
 	const int major_min = 4, minor_min = 0;
 	const int contextAttribs[] = {
@@ -146,8 +147,8 @@ int Window::create(HINSTANCE hInstance, int nCmdShow) {
 		0
 	};
 
-	RC = wglCreateContextAttribsARB(DC, nullptr, &contextAttribs[0]);
-	if (!RC) {
+	m_RC = wglCreateContextAttribsARB(m_DC, nullptr, &contextAttribs[0]);
+	if (!m_RC) {
 		showMessage(_T("wglCreateContextAttribsARB() failed."));
 		return 1;
 	}
@@ -158,7 +159,7 @@ int Window::create(HINSTANCE hInstance, int nCmdShow) {
 	wglDeleteContext(fakeRC);
 	ReleaseDC(fakeWND, fakeDC);
 	DestroyWindow(fakeWND);
-	if (!wglMakeCurrent(DC, RC)) {
+	if (!wglMakeCurrent(m_DC, m_RC)) {
 		showMessage(_T("wglMakeCurrent() failed."));
 		return 1;
 	}
@@ -176,8 +177,8 @@ int Window::create(HINSTANCE hInstance, int nCmdShow) {
 #endif
 #pragma warning(pop)
 
-	SetWindowText(WND, str.c_str());
-	ShowWindow(WND, nCmdShow);
+	SetWindowText(m_WND, str.c_str());
+	ShowWindow(m_WND, nCmdShow);
 
 	return 0;
 }
@@ -204,10 +205,10 @@ ATOM Window::registerClass(HINSTANCE hInstance) noexcept {
 
 void Window::adjustSize() noexcept {
 
-	RECT rect = { 0, 0, config.width, config.height };
-	AdjustWindowRect(&rect, style, false);
-	config.width = rect.right - rect.left;
-	config.height = rect.bottom - rect.top;
+	RECT rect = { 0, 0, m_config.width, m_config.height };
+	AdjustWindowRect(&rect, m_config.style, false);
+	m_config.width = rect.right - rect.left;
+	m_config.height = rect.bottom - rect.top;
 }
 
 ///////////////////////////////////////////////////////////
@@ -216,15 +217,18 @@ void Window::center() noexcept {
 
 	RECT primaryDisplaySize;
 	SystemParametersInfo(SPI_GETWORKAREA, 0, &primaryDisplaySize, 0);	// system taskbar and application desktop toolbars not included
-	config.posX = (primaryDisplaySize.right - config.width) / 2;
-	config.posY = (primaryDisplaySize.bottom - config.height) / 2;
+	m_config.posX = (primaryDisplaySize.right - m_config.width) / 2;
+	m_config.posY = (primaryDisplaySize.bottom - m_config.height) / 2;
 }
 
 ///////////////////////////////////////////////////////////
 
 void Window::render() noexcept {
+	wglMakeCurrent(m_DC, m_RC);
 
-	glClearColor(0.129f, 0.586f, 0.949f, 1.0f);	// rgb(33,150,243)
+	static const auto start = std::chrono::steady_clock::now();
+	const float t = std::chrono::duration_cast<std::chrono::duration<float>>(std::chrono::steady_clock::now() - start).count();
+	glClearColor(0.129f, std::cosf(2.0f * static_cast<float>(M_PI) * t / 5.0f) + 1.0f, std::sinf(2.0f * static_cast<float>(M_PI) * t/5.0f)+1.0f, 1.0f);	// rgb(33,150,243)
 	glClear(GL_COLOR_BUFFER_BIT);
 }
 
@@ -232,7 +236,7 @@ void Window::render() noexcept {
 
 void Window::swapBuffers() noexcept {
 
-	SwapBuffers(DC);
+	SwapBuffers(m_DC);
 }
 
 ///////////////////////////////////////////////////////////
@@ -240,14 +244,14 @@ void Window::swapBuffers() noexcept {
 void Window::destroy() noexcept {
 
 	wglMakeCurrent(nullptr, nullptr);
-	if (RC) {
-		wglDeleteContext(RC);
+	if (m_RC) {
+		wglDeleteContext(m_RC);
 	}
-	if (DC) {
-		ReleaseDC(WND, DC);
+	if (m_DC) {
+		ReleaseDC(m_WND, m_DC);
 	}
-	if (WND) {
-		DestroyWindow(WND);
+	if (m_WND) {
+		DestroyWindow(m_WND);
 	}
 }
 
